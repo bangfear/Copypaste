@@ -1,0 +1,40 @@
+addEventListener('fetch', event => {
+  event.respondWith(handleRequest(event.request));
+});
+
+async function handleRequest(request) {
+  try {
+    const url = new URL(request.url);
+    const targetDomain = 'example.com'; // Replace this with your actual target domain/IP
+
+    // Log incoming request
+    const originalUrl = request.url;
+    console.log("Incoming Request:", originalUrl);
+
+    // Rewrite the hostname to the target domain
+    url.hostname = targetDomain;
+
+    // Clone the request and set the Host header
+    const modifiedRequest = new Request(url, request);
+    modifiedRequest.headers.set('Host', targetDomain);
+
+    // Fetch the modified request
+    const response = await fetch(modifiedRequest);
+
+    // Send back logs with response for debugging
+    const responseBody = await response.text();
+    const debugInfo = `
+      Original URL: ${originalUrl}
+      Forwarded URL: ${url.href}
+      Response Status: ${response.status}
+    `;
+
+    return new Response(`DEBUG INFO:\n${debugInfo}\n\nResponse Body:\n${responseBody}`, {
+      status: response.status,
+      headers: { 'Content-Type': 'text/plain' }
+    });
+  } catch (err) {
+    // Return error details in the response
+    return new Response(`Error: ${err.message}`, { status: 500 });
+  }
+}
